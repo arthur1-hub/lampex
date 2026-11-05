@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Peça 1 — Diagnóstico Financeiro (T0)</title>
+<style>
+:root{--bg:#f4f6f9;--card:#fff;--tx:#1c2430;--mut:#667085;--bd:#dde1e8;--ac:#1667b1;--acx:#e6f0fa;--wn:#b7791f;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14181f;--card:#1d232d;--tx:#e8ebf0;--mut:#9aa4b2;--bd:#323b49;--ac:#6db1f0;--acx:#22344a;--wn:#e0b04f}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:860px;margin:0 auto;padding:16px 14px 90px}
+h1{font-size:1.35rem;margin:0}h2{font-size:1.05rem;margin:22px 0 8px;color:var(--ac)}
+.sub,.note,.sm{color:var(--mut);font-size:.82rem}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:10px}
+.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px}
+.g5{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-top:4px}
+label.f{display:block;font-size:.78rem;color:var(--mut)}
+input,select,textarea{width:100%;padding:8px;margin-top:3px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx);font:inherit}
+input[type=checkbox]{width:auto;margin-right:8px}
+.ck{display:block;margin:4px 0;font-size:.9rem}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+td,th{border-bottom:1px solid var(--bd);padding:6px 4px;text-align:left;vertical-align:top}
+th{color:var(--mut);font-weight:600;font-size:.78rem}
+td.v{font-weight:700;white-space:nowrap}
+.w{color:var(--wn);font-size:.85rem;margin:4px 0}
+button{font:inherit;padding:8px 14px;border-radius:8px;border:1px solid var(--ac);background:var(--ac);color:var(--bg);cursor:pointer;font-weight:600}
+button.s{background:transparent;color:var(--ac)}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+#bar{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--bd);padding:8px 14px calc(8px + env(safe-area-inset-bottom,0px));display:flex;gap:10px;align-items:center;overflow-x:auto;white-space:nowrap;font-size:.82rem}
+#bar b{color:var(--ac)}
+#ta{display:none;height:200px}
+@media print{#bar,.btns,#ta{display:none!important}}
+</style>
+</head>
+<body>
+<main>
+<h1>Peça 1 — Diagnóstico Financeiro (T0)</h1>
+<p class="sub">Ferramenta independente · Peça 1 com os indicadores do Manual (piloto 1.0). Tudo é calculado na tela: nada é salvo nem enviado. Use apenas o código interno do atendido, sem nome. Registre 0 somente quando o valor for realmente zero; deixe em branco se não sabe.</p>
+<div class="btns"><button class="s" id="demo">Carregar caso exemplo (Marina)</button><button class="s" id="clr">Limpar tudo</button></div>
+<div id="app"></div>
+
+<h2 id="resh">Resultados</h2>
+<div class="card" id="out"></div>
+<div class="btns"><button id="copy">Copiar resumo</button><button class="s" id="print">Imprimir / PDF</button></div>
+<textarea id="ta" readonly></textarea>
+<h2>Acoplar a outras ferramentas (opcional)</h2><div class="card"><div class="sm">Cole o código da Escala de Bem-Estar para incluir o BE nos resultados, ou copie o código desta Peça 1 para levar à Peça 2.</div><textarea id="imp" rows="3"></textarea><div class="btns"><button class="s" id="impb">Importar da Escala de BE</button><button class="s" id="expb">Copiar código desta Peça 1</button></div><div id="impm" class="sm"></div></div><p class="note">Os indicadores seguem o Manual (piloto 1.0), que não define pesos, pontos de corte, escore global nem ISF; por isso a ferramenta não classifica.</p>
+</main>
+<div id="bar"></div>
+
+<script>
+const $=s=>document.querySelector(s),R=n=>n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}),P=(n,d=1)=>n.toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d});
+const fld=(k,l,t='text')=>`<label class="f">${l}<input data-k="${k}" data-l="${l}" type="${t}" ${t=='number'?'step="any" inputmode="decimal"':''}></label>`;
+const sel=(k,l,o)=>`<label class="f">${l}<select data-k="${k}" data-l="${l}"><option value="">—</option>${o.map(v=>`<option>${v}</option>`).join('')}</select></label>`;
+const ta=(k,l)=>`<label class="f">${l}<textarea data-k="${k}" data-l="${l}" rows="2"></textarea></label>`;
+const ck=(k,l)=>`<label class="ck"><input type="checkbox" data-k="${k}" data-l="${l}">${l}</label>`;
+const E4F=[['cr','Credor'],['pr','Prestação'],['sa','Saldo'],['pz','Prazo'],['tx','Taxa/custo']];
+let nd=0;
+const debt=i=>`<div class="card"><b>Dívida ${i+1}</b><div class="g">${sel('d'+i+'_t','Tipo: P parcelada / E estoque',['P','E'])}${fld('d'+i+'_c','Credor / tipo')}${fld('d'+i+'_s','Saldo devedor R$','number')}${fld('d'+i+'_p','Prestação R$','number')}${fld('d'+i+'_pg','Pagas','number')}${fld('d'+i+'_rs','Restantes','number')}${fld('d'+i+'_tx','Taxa/custo')}${fld('d'+i+'_v','Vencido R$','number')}</div><div class="sm" style="margin-top:6px">E4 · C conhece · D desconhece · NA não se aplica</div><div class="g5">${E4F.map(([k,l])=>sel('e'+i+'_'+k,l,['C','D','NA'])).join('')}</div></div>`;
+function addDebt(){if(nd>=10)return;$('#debts').insertAdjacentHTML('beforeend',debt(nd++));}
+$('#app').innerHTML=`
+<h2>A. Identificação e contexto</h2><div class="card g">${fld('cod','Código interno do atendido')}${fld('cons','Consultor(es)')}${fld('dcol','Mês de referência','month')}${sel('un','Unidade de análise',['Individual','Familiar'])}${fld('fam','Composição familiar e dependentes')}${fld('mot','Motivo principal da procura')}${fld('sonho','Sonho ou objetivo financeiro')}${fld('preo','Maior preocupação financeira atual')}</div>
+<h2>B. Demonstrativo financeiro inicial (R$ por mês)</h2><div class="card g">${fld('renda','(+) Renda líquida mensal','number')}${fld('ess','(−) Despesas essenciais (sem parcelas de dívidas)','number')}${fld('out','(−) Outras despesas mensais (sem parcelas de dívidas)','number')}${fld('prest','(−) Prestações mensais de dívidas (vazio = soma do quadro C)','number')}${fld('est','Dívidas estoque sem parcelamento (vazio = soma do quadro C)','number')}</div>
+<div class="card">${ck('q1','Valores confirmados')}${ck('q2','Valores estimados')}${ck('q3','Valores parcialmente desconhecidos')}${ta('qobs','Fonte / observações')}</div>
+<h2>C e E4. Mapeamento e conhecimento das dívidas</h2><div class="note">Estoque (E): prestação e prazo normalmente são NA; taxa/custo continua aplicável se houver custo. Não confunda desconhecido (D) com NA.</div><div id="debts"></div><div class="btns"><button class="s" id="add">+ Adicionar dívida</button></div>
+<h2>D. Segurança financeira</h2><div class="card g">${sel('res','Há reserva para imprevistos?',['Sim','Não','Não sabe'])}${fld('liq','Valor líquido disponível para emergências R$','number')}${fld('bens','Outros bens/investimentos relevantes (separados da reserva) R$','number')}</div>`;
+addDebt();addDebt();addDebt();
+const el=k=>document.querySelector(`[data-k="${k}"]`);
+const v=k=>{const x=parseFloat(el(k).value);return isNaN(x)?null:x};
+const sm=a=>a.some(x=>x!==null)?a.reduce((s,x)=>s+(x||0),0):null;
+function cp(t,b){const o=b.textContent;navigator.clipboard.writeText(t).then(()=>{b.textContent='Copiado!';setTimeout(()=>b.textContent=o,1500)}).catch(()=>{const a=$('#ta');a.value=t;a.style.display='block';a.select()})}
+function imp(h){try{h(JSON.parse($('#imp').value.trim()));$('#impm').textContent='Importado.'}catch(e){$('#impm').textContent='Código inválido. Cole o código copiado de outra ferramenta.'}}
+let IMP=null;
+let LAST=[];
+function calc(){
+ const ds=[...Array(nd).keys()],rows=[],W=[];
+ const sal=ds.map(i=>v('d'+i+'_s')),venc=ds.map(i=>v('d'+i+'_v'));
+ const prD=sm(ds.filter(i=>el('d'+i+'_t').value!='E').map(i=>v('d'+i+'_p')));
+ const esD=sm(ds.filter(i=>el('d'+i+'_t').value=='E').map(i=>sal[i]));
+ const renda=v('renda'),ess=v('ess'),out=v('out'),pr=v('prest')!==null?v('prest'):prD,es=v('est')!==null?v('est'):esD;
+ const s1=renda!==null&&ess!==null?renda-ess:null,s2=s1!==null&&out!==null?s1-out:null,s3=s2!==null&&pr!==null?s2-pr:null,s4=s3!==null&&es!==null?s3-es:null;
+ const ok=renda!==null&&renda>0;if(renda!==null&&renda<=0)W.push('Renda líquida não positiva: E1, E3 e EO1 ficam sem cálculo; sinalizar o caso.');
+ const f=x=>x===null?'—':R(x);
+ rows.push(['Saldo 1 (após essenciais)',f(s1),'renda − essenciais']);rows.push(['Saldo 2 (após despesas correntes)',f(s2),'S1 − outras']);rows.push(['Saldo 3 (resultado mensal estimado)',f(s3),'S2 − prestações']);rows.push(['Saldo 4 (complementar, só referência)',f(s4),'S3 − dívidas estoque. Não é déficit mensal nem patrimônio líquido; não entra no EO1']);
+ const e1=ok&&pr!==null?pr/renda*100:null;
+ rows.push(['E1 Comprometimento da renda',e1===null?'—':P(e1)+'%','prestações ÷ renda × 100']);
+ const vt=sm(venc);
+ rows.push(['E2 Inadimplência',vt===null?'—':(vt>0?'Sim · '+R(vt):'Não'),'há valores vencidos? quanto?']);
+ const dt=sm(sal),e3=ok&&dt!==null?dt/renda:null;
+ rows.push(['E3 Dívida total ÷ renda',e3===null?'—':P(e3,2)+' meses de renda',`saldo total ${dt===null?'—':R(dt)} ÷ renda (razão estoque/fluxo, não prazo de quitação)`]);
+ let C=0,D=0;const per=ds.map(i=>{let c=0,d=0;E4F.forEach(([k])=>{const x=el('e'+i+'_'+k).value;if(x=='C')c++;if(x=='D')d++});C+=c;D+=d;return c+d?`D${i+1}: ${c}/${c+d}`:null}).filter(Boolean);
+ rows.push(['E4 Conhecimento das dívidas',C+D?P(C/(C+D)*100)+'/100':'—',`${C} C ÷ ${C+D} (C+D), excluindo NA`+(per.length?' · '+per.join(', '):'')]);
+ const eo=ok&&s3!==null?s3/renda*100:null;
+ rows.push(['EO1 Saldo mensal relativo',eo===null?'—':(eo>0?'+':'')+P(eo)+'%','saldo 3 ÷ renda × 100']);
+ const liq=v('liq');rows.push(['S1 Reserva disponível',f(liq),'valor efetivamente acessível']);
+ const s2r=liq!==null&&ess>0?liq/ess:null;rows.push(['S2 Cobertura da reserva',s2r===null?'—':P(s2r,2)+' mês(es)','reserva ÷ despesas essenciais']);
+ if(vt!==null&&dt!==null&&vt>dt)W.push('Valor vencido maior que a dívida total: confira o quadro.');
+ if(ds.some(i=>sal[i]!==null&&venc[i]!==null&&venc[i]>sal[i]))W.push('Há dívida com valor vencido acima do saldo devedor.');
+ if(ds.some(i=>el('d'+i+'_t').value=='E'&&v('d'+i+'_p')!==null))W.push('Dívida tipo estoque (E) com prestação preenchida: normalmente é NA.');
+ if(v('prest')!==null&&prD!==null&&v('prest')!==prD)W.push('Prestações do demonstrativo diferem da soma do quadro C.');
+ if(IMP)rows.push(['BE Bem-estar financeiro (provisório)',IMP.score,'importado da Escala de BE · aplicada em '+(IMP.data||'—')+(IMP.cod&&IMP.cod!=el('cod').value?' · ⚠ código diferente':'')]);
+ LAST=rows;
+ $('#out').innerHTML=`<table><tr><th>Indicador</th><th>Resultado</th><th>Cálculo / observação</th></tr>${rows.map(r=>`<tr><td>${r[0]}</td><td class="v">${r[1]}</td><td class="sm">${r[2]}</td></tr>`).join('')}</table>${W.map(w=>`<div class="w">⚠ ${w}</div>`).join('')}`;
+ $('#bar').innerHTML=['E1','E3','E4','EO1','S2','BE'].map(k=>{const r=rows.find(r=>r[0].startsWith(k+' '));return `<span>${k} <b>${r?r[1].split(' ·')[0].split(' (')[0]:'—'}</b></span>`}).join('')+'<a href="#resh" style="margin-left:auto;color:var(--ac)">Ver tudo</a>';
+}
+function resumo(){
+ const L=['LINHA DE CUIDADO FINANCEIRO · T0 (dados brutos)'];
+ document.querySelectorAll('[data-k]').forEach(e=>{const x=e.type=='checkbox'?(e.checked?'Sim':'Não'):e.value;if(x!=='')L.push(`${e.dataset.l||e.dataset.k}: ${x}`)});
+ L.push('','INDICADORES CALCULADOS');LAST.forEach(r=>L.push(`${r[0]}: ${r[1]}`));return L.join('\n');
+}
+document.addEventListener('input',calc);document.addEventListener('change',calc);
+$('#add').onclick=()=>{addDebt();calc()};
+$('#print').onclick=()=>window.print();
+$('#copy').onclick=async()=>{const t=resumo();try{await navigator.clipboard.writeText(t);$('#copy').textContent='Copiado!';setTimeout(()=>$('#copy').textContent='Copiar resumo',1500)}catch(e){$('#ta').value=t;$('#ta').style.display='block';$('#ta').select()}};
+$('#clr').onclick=()=>{IMP=null;$('#impm').textContent='';document.querySelectorAll('[data-k]').forEach(e=>e.type=='checkbox'?e.checked=false:e.value='');calc()};
+$('#demo').onclick=()=>{$('#clr').click();const S={cod:'EXEMPLO-01',renda:5000,ess:2600,out:900,prest:800,est:4200,liq:1300,d0_t:'P',d0_c:'Empréstimo pessoal',d0_s:12000,d0_p:500,d0_pg:8,d0_rs:24,d0_tx:'2% a.m.',d0_v:0,e0_cr:'C',e0_pr:'C',e0_sa:'C',e0_pz:'C',e0_tx:'C',d1_t:'P',d1_c:'Financiamento',d1_s:6000,d1_p:300,d1_pg:4,d1_rs:20,d1_v:0,e1_cr:'C',e1_pr:'C',e1_sa:'C',e1_pz:'C',e1_tx:'D',d2_t:'E',d2_c:'Cartão',d2_s:4200,d2_v:1200,e2_cr:'C',e2_pr:'NA',e2_sa:'C',e2_pz:'NA',e2_tx:'D'};for(const k in S)el(k).value=S[k];calc()};
+$('#impb').onclick=()=>imp(o=>{if(o.t!='BE'||!o.score)throw 0;IMP=o;if(o.cod&&!el('cod').value)el('cod').value=o.cod;calc()});
+$('#expb').onclick=()=>cp(JSON.stringify({t:'P1',cod:el('cod').value,dcol:el('dcol').value,ind:LAST.filter(r=>!r[0].startsWith('BE ')).map(r=>[r[0],r[1]])}),$('#expb'));
+calc();
+</script>
+</body>
+</html>

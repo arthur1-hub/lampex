@@ -1,0 +1,57 @@
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Peça 2 — Avaliação do Consultor</title><style>
+:root{--bg:#f4f6f9;--card:#fff;--tx:#1c2430;--mut:#667085;--bd:#dde1e8;--ac:#1667b1;--acx:#e6f0fa;--wn:#b7791f;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14181f;--card:#1d232d;--tx:#e8ebf0;--mut:#9aa4b2;--bd:#323b49;--ac:#6db1f0;--acx:#22344a;--wn:#e0b04f}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:860px;margin:0 auto;padding:16px 14px 90px}
+h1{font-size:1.35rem;margin:0}h2{font-size:1.05rem;margin:22px 0 8px;color:var(--ac)}
+.sub,.note,.sm{color:var(--mut);font-size:.82rem}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:10px}
+.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px}
+.g5{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-top:4px}
+label.f{display:block;font-size:.78rem;color:var(--mut)}
+input,select,textarea{width:100%;padding:8px;margin-top:3px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx);font:inherit}
+input[type=checkbox]{width:auto;margin-right:8px}
+.ck{display:block;margin:4px 0;font-size:.9rem}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+td,th{border-bottom:1px solid var(--bd);padding:6px 4px;text-align:left;vertical-align:top}
+th{color:var(--mut);font-weight:600;font-size:.78rem}
+td.v{font-weight:700;white-space:nowrap}
+.w{color:var(--wn);font-size:.85rem;margin:4px 0}
+button{font:inherit;padding:8px 14px;border-radius:8px;border:1px solid var(--ac);background:var(--ac);color:var(--bg);cursor:pointer;font-weight:600}
+button.s{background:transparent;color:var(--ac)}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+#bar{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--bd);padding:8px 14px calc(8px + env(safe-area-inset-bottom,0px));display:flex;gap:10px;align-items:center;overflow-x:auto;white-space:nowrap;font-size:.82rem}
+#bar b{color:var(--ac)}
+#ta{display:none;height:200px}
+@media print{#bar,.btns,#ta{display:none!important}}
+</style></head><body><main><h1>Peça 2 — Avaliação do Consultor e Encaminhamentos</h1><p class="sub">Ferramenta independente · registro reservado à equipe. Nada é salvo nem enviado. Não calcula escore global de autonomia (o Manual não o define).</p><div id="app"></div><div class="btns"><button id="copy">Copiar resumo</button><button class="s" id="exp">Copiar código para outra ferramenta</button><button class="s" id="print">Imprimir / PDF</button><button class="s" id="clr">Limpar</button></div><textarea id="ta" readonly></textarea></main><script>const $=s=>document.querySelector(s);
+const fld=(k,l,t='text')=>`<label class="f">${l}<input data-k="${k}" data-l="${l}" type="${t}" ${t=='number'?'step="any" inputmode="decimal"':''}></label>`;
+const sel=(k,l,o)=>`<label class="f">${l}<select data-k="${k}" data-l="${l}"><option value="">—</option>${o.map(v=>`<option>${v}</option>`).join('')}</select></label>`;
+const ta=(k,l)=>`<label class="f">${l}<textarea data-k="${k}" data-l="${l}" rows="2"></textarea></label>`;
+const ck=(k,l)=>`<label class="ck"><input type="checkbox" data-k="${k}" data-l="${l}">${l}</label>`;
+const el=k=>document.querySelector(`[data-k="${k}"]`);
+const v=k=>{const x=parseFloat(el(k).value);return isNaN(x)?null:x};
+async function cp(t,b){const o=b.textContent;try{await navigator.clipboard.writeText(t);b.textContent='Copiado!';setTimeout(()=>b.textContent=o,1500)}catch(e){const a=$('#ta');a.value=t;a.style.display='block';a.select()}}
+function imp(h){try{h(JSON.parse($('#imp').value.trim()));$('#impm').textContent='Importado.'}catch(e){$('#impm').textContent='Código inválido. Cole o código copiado de outra ferramenta.'}}
+function dump(){const o={};document.querySelectorAll('[data-k]').forEach(e=>{const x=e.type=='checkbox'?(e.checked?'Sim':'Não'):e.value;if(x!=='')o[e.dataset.l||e.dataset.k]=x});return o}
+const OA=["OA1. Conhece sua situação financeira", "OA2. Mantém controle de receitas e despesas", "OA3. Planeja próximos passos", "OA4. Toma decisões financeiras fundamentadas"];
+const OAO=['0 Não','1 Parcial / ajuda','2 Sim / autônomo','Não avaliado'];
+$('#app').innerHTML=`<h2>Identificação</h2><div class="card g">${fld('cod','Código interno do atendido')}${fld('cons','Consultor(es)')}${fld('dav','Data da avaliação','date')}${fld('enc','Encontro nº','number')}${sel('p1','Diagnóstico financeiro (Peça 1) concluído?',['Sim','Parcial','Não'])}</div>
+<h2>Referência (opcional)</h2><div class="card"><div class="sm">Cole o código copiado da Peça 1 ou da Escala de Bem-Estar para ter os resultados à mão enquanto avalia. Não é obrigatório.</div><textarea id="imp" rows="3"></textarea><div class="btns"><button class="s" id="impb">Importar</button></div><div id="impm" class="sm"></div><div id="ref"></div></div>
+<h2>E. Organização e autonomia</h2><div class="card"><div class="note">Avaliar com base em evidências observadas, preferencialmente até o segundo encontro. “Ainda não foi possível avaliar” não equivale a zero.</div><div class="g" style="margin-top:8px">${OA.map((t,i)=>sel('oa'+i,t,OAO)).join('')}</div>${ta('evid','Evidências breves para justificar a avaliação')}</div>
+<h2>F. Primeiros encaminhamentos</h2><div class="card g">${ta('dif','Principal dificuldade identificada')}${ta('pri','Prioridade inicial indicada pelo atendido')}${ta('acao','Primeira ação combinada (simples e viável)')}${ta('prazo','Prazo / próximo encontro')}${ta('pend','Informações e documentos pendentes')}${ta('obs','Observações do consultor')}</div>
+<h2>Conferência e integridade dos dados</h2><div class="card">${ck('c1','Renda e despesas usam a mesma unidade de análise.')}${ck('c2','Parcelas de dívidas não foram duplicadas nas despesas.')}${ck('c3','Dívidas estoque não foram confundidas com pagamentos mensais.')}${ck('c4','Valores desconhecidos estão sinalizados (não registrados como zero).')}${ck('c5','Escala de Bem-Estar aplicada separadamente ou pendente identificada.')}</div>`;
+let P1=null,B1=null;
+function reset(){P1=null;B1=null;$('#impm').textContent=''}
+function calc(){let h='';const c=el('cod').value;
+ [P1,B1].forEach(o=>{if(o&&o.cod&&c&&o.cod!=c)h+=`<div class="w">⚠ Código importado (${o.cod}) difere do código desta avaliação.</div>`});
+ if(P1)h+=`<table><tr><th>Peça 1 · indicadores</th><th>Resultado</th></tr>${P1.ind.map(r=>`<tr><td>${r[0]}</td><td class="v">${r[1]}</td></tr>`).join('')}</table>`;
+ if(B1)h+=`<div style="margin-top:6px">Bem-estar financeiro (provisório): <b>${B1.score}</b> · aplicada em ${B1.data||'—'}</div>`;
+ $('#ref').innerHTML=h}
+$('#impb').onclick=()=>imp(o=>{if(o.t=='P1')P1=o;else if(o.t=='BE'&&o.score)B1=o;else throw 0;if(o.cod&&!el('cod').value)el('cod').value=o.cod;calc()});
+$('#copy').onclick=()=>cp(['PEÇA 2 · AVALIAÇÃO DO CONSULTOR (T0)',...Object.entries(dump()).map(([k,x])=>k+': '+x)].join('\n'),$('#copy'));
+$('#exp').onclick=()=>cp(JSON.stringify({t:'P2',cod:el('cod').value,dados:dump()}),$('#exp'));
+$('#print').onclick=()=>window.print();
+$('#clr').onclick=()=>{document.querySelectorAll('[data-k]').forEach(e=>e.type=='checkbox'?e.checked=false:e.value='');if(window.reset)reset();calc()};
+document.addEventListener('input',calc);document.addEventListener('change',calc);calc();</script></body></html>
